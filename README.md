@@ -53,6 +53,8 @@ cd qiita # Do this in the qiita directory
 npx qiita init
 ```
 
+Remove `qiita/.github/` directory which is duplicated.
+
 ### Set Qiita Access Token
 
 To post articles to Qiita using the Qiita CLI, you need to obtain a Qiita access token in advance. Please refer to the link above for instructions.  
