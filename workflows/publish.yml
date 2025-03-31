@@ -1,0 +1,52 @@
+# Please set 'QIITA_TOKEN' secret to your repository
+name: Publish articles
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'articles/**'
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  Publish_new_articles_to_Qiita:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Retrieve new articles and save to env
+        id: retrieve_new_articles
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf git@github.com:
+          git fetch origin main
+          git diff --name-only HEAD~1 HEAD articles/ > new_articles.txt
+          cat new_articles.txt
+
+      - name: Convert new articles to Qiita format
+        id: convert_new_articles
+        run: |
+          if [ -s new_articles.txt ]; then
+            echo "New articles below found. Converting to Qiita format..."
+            cat new_articles.txt
+            ./create_qiita_article.sh $(cat new_articles.txt)
+          else
+            echo "No new articles found."
+          fi
+
+      - name: Publish to Qiita if new articles exist
+        uses: increments/qiita-cli/actions/publish@v1
+        with:
+          qiita-token: ${{ secrets.QIITA_TOKEN }}
+          root: "qiita"
